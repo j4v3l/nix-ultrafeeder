@@ -53,6 +53,39 @@
       in {
         formatter = pkgs.alejandra;
 
+        # Development shell with useful tools
+        devShells.default = pkgs.mkShell {
+          name = "nix-ultrafeeder-dev";
+          packages = with pkgs; [
+            alejandra
+            statix
+            deadnix
+            nil # Nix LSP
+            sops
+            age
+          ];
+          shellHook = ''
+            lint() {
+              echo "Running statix..."
+              statix check . && \
+              echo "Running deadnix..." && \
+              deadnix --fail .
+            }
+            fmt() {
+              alejandra .
+            }
+            clear
+            echo
+            echo "=== nix-ultrafeeder Dev Shell ==="
+            echo
+            echo "Available commands:"
+            echo "  fmt               Format all Nix files with alejandra"
+            echo "  lint              Run statix and deadnix checks"
+            echo "  nix flake check   Run full CI checks"
+            echo
+          '';
+        };
+
         checks = {
           alejandra =
             pkgs.runCommand "check-alejandra"

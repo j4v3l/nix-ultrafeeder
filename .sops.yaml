@@ -1,6 +1,18 @@
+# SOPS configuration for age encryption
+# Docs: https://github.com/getsops/sops
+#
+# To use:
+#   1. Generate an age key:  age-keygen -o key.txt
+#   2. Copy the PUBLIC key (age1...) into the `age:` array below
+#   3. Encrypt secrets:  sops --encrypt --in-place secrets/secrets.yaml
+#   4. On the NixOS host, place the PRIVATE key at /var/lib/sops-nix/key.txt (or wherever you set ultra.sops.ageKeyFile)
+
 creation_rules:
-  - path_regex: secrets/.*\\.ya?ml
+  - path_regex: secrets/.*\.ya?ml
     encrypted_regex: "^(.*)$"
-    age: []
+    age:
+      # Add your age public key here, e.g.:
+      # - age1ql3z7hjy54pw3hyww5ayyfg7zqgvc7w3j2elw8zmrj2kg5sfn9aqmcac8p
+      []
 
 

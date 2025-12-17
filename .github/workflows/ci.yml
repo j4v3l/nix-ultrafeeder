@@ -18,6 +18,8 @@ jobs:
 
       - uses: DeterminateSystems/magic-nix-cache-action@v7
 
+      - uses: DeterminateSystems/flake-checker-action@v9
+
       - name: Nix flake check
         run: nix flake check --all-systems
 

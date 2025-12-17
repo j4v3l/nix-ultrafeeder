@@ -6,6 +6,14 @@ Thanks for helping improve this project.
 
 - Nix with flakes enabled
 
+## Development shell
+
+Enter a shell with all dev tools (alejandra, statix, deadnix, nil LSP, sops, age):
+
+```bash
+nix develop
+```
+
 ## Quick checks
 
 Run:

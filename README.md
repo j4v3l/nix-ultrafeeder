@@ -25,7 +25,7 @@ Add this repo as an input and import the modules you want:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nix-ultrafeederfeeder.url = "path:/absolute/path/to/nix-ultrafeeder";
+    nix-ultrafeeder.url = "github:j4v3l/nix-ultrafeeder";
   };
 
   outputs = { self, nixpkgs, nix-ultrafeeder, ... }: {
