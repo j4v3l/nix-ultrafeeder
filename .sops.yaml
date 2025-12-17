@@ -1,0 +1,6 @@
+creation_rules:
+  - path_regex: secrets/.*\\.ya?ml
+    encrypted_regex: "^(.*)$"
+    age: []
+
+

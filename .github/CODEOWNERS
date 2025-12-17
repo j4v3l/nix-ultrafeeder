@@ -1,0 +1,26 @@
+# GitHub CODEOWNERS
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Order matters: later matches override earlier ones.
+
+# Default owner for everything in the repo
+* @j4v3l
+
+# More specific areas (still owned by @j4v3l, but makes intent clear)
+/.github/        @j4v3l
+/flake.nix       @j4v3l
+/flake.lock      @j4v3l
+/lib/            @j4v3l
+/modules/        @j4v3l
+/profiles/       @j4v3l
+/hosts/          @j4v3l
+/vars/           @j4v3l
+/home/           @j4v3l
+/docs/           @j4v3l
+/secrets/        @j4v3l
+/overlays/       @j4v3l
+/packages/       @j4v3l
+/scripts/        @j4v3l
+/test/           @j4v3l
+
+

@@ -1,0 +1,25 @@
+# Nix
+/result
+/result-*
+/.direnv
+/.envrc
+
+# macOS
+.DS_Store
+
+# Local env files
+.env
+.env.*
+
+# SOPS/age secrets
+# Keep the example file tracked; ignore real secrets and private keys.
+/secrets/*.yaml
+!/secrets/example.secrets.yaml
+/secrets/*.yml
+!/secrets/example.secrets.yaml
+/secrets/*.json
+/secrets/*.agekey
+/secrets/key.txt
+/secrets/*.key
+
+
