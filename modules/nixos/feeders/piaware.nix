@@ -6,6 +6,10 @@
   cfg = config.services.adsbFeeders.piaware;
 in {
   options.services.adsbFeeders.piaware = {
+    meta = {
+      maintainers = ["j4v3l"];
+      description = "Run SDR-Enthusiasts PiAware (FlightAware) feeder container";
+    };
     enable = lib.mkEnableOption "Run SDR-Enthusiasts PiAware (FlightAware) feeder container";
 
     backend = lib.mkOption {

@@ -6,6 +6,10 @@
   cfg = config.services.adsbFeeders.airnavradar;
 in {
   options.services.adsbFeeders.airnavradar = {
+    meta = {
+      maintainers = ["j4v3l"];
+      description = "Run SDR-Enthusiasts AirNav Radar feeder container";
+    };
     enable = lib.mkEnableOption "Run SDR-Enthusiasts AirNav Radar feeder container";
 
     backend = lib.mkOption {

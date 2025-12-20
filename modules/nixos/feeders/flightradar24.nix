@@ -6,6 +6,10 @@
   cfg = config.services.adsbFeeders.flightradar24;
 in {
   options.services.adsbFeeders.flightradar24 = {
+    meta = {
+      maintainers = ["j4v3l"];
+      description = "Run SDR-Enthusiasts FlightRadar24 feeder container";
+    };
     enable = lib.mkEnableOption "Run SDR-Enthusiasts FlightRadar24 feeder container";
 
     backend = lib.mkOption {

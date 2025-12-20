@@ -1,5 +1,5 @@
 {
-  description = "NixOS flake to run sdr-enthusiasts/docker-adsb-ultrafeeder via oci-containers";
+  description = "NixOS flake to run sdr-enthusiasts/docker-adsb-ultrafeeder via oci-containers (v0.1.0)";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -81,45 +81,63 @@
             echo "Available commands:"
             echo "  fmt               Format all Nix files with alejandra"
             echo "  lint              Run statix and deadnix checks"
-            echo "  nix flake check   Run full CI checks"
+            echo "  nix flake check   Run full CI checks (includes NixOS module tests)"
+            echo "  nix build .#checks.x86_64-linux.ultrafeeder-basic   # Run a specific test (replace system as needed)"
             echo
           '';
         };
 
-        checks = {
-          alejandra =
-            pkgs.runCommand "check-alejandra"
-            {
-              nativeBuildInputs = [pkgs.alejandra];
-            }
-            ''
-              cd ${self}
-              alejandra -c .
-              touch $out
-            '';
+        checks = let
+          isLinux = builtins.elem system ["x86_64-linux" "aarch64-linux"];
+        in
+          {
+            alejandra =
+              pkgs.runCommand "check-alejandra"
+              {
+                nativeBuildInputs = [pkgs.alejandra];
+              }
+              ''
+                cd ${self}
+                alejandra -c .
+                touch $out
+              '';
 
-          statix =
-            pkgs.runCommand "check-statix"
-            {
-              nativeBuildInputs = [pkgs.statix];
-            }
-            ''
-              cd ${self}
-              statix check .
-              touch $out
-            '';
+            statix =
+              pkgs.runCommand "check-statix"
+              {
+                nativeBuildInputs = [pkgs.statix];
+              }
+              ''
+                cd ${self}
+                statix check .
+                touch $out
+              '';
 
-          deadnix =
-            pkgs.runCommand "check-deadnix"
-            {
-              nativeBuildInputs = [pkgs.deadnix];
+            deadnix =
+              pkgs.runCommand "check-deadnix"
+              {
+                nativeBuildInputs = [pkgs.deadnix];
+              }
+              ''
+                cd ${self}
+                deadnix --fail .
+                touch $out
+              '';
+          }
+          // (
+            if isLinux
+            then {
+              ultrafeeder-basic = import ./tests/ultrafeeder-basic.nix {
+                inherit pkgs;
+                ultrafeederModulePath = ./modules/nixos/ultrafeeder.nix;
+              };
+              ultrafeeder-env-merge = import ./tests/ultrafeeder-env-merge.nix {
+                inherit pkgs;
+                ultrafeederModulePath = ./modules/nixos/ultrafeeder.nix;
+              };
             }
-            ''
-              cd ${self}
-              deadnix --fail .
-              touch $out
-            '';
-        };
+            else {}
+          );
 
         packages.default = pkgs.writeText "nix-ultrafeeder.txt" ''
           This flake provides NixOS modules:

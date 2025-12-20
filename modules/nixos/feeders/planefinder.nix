@@ -6,6 +6,10 @@
   cfg = config.services.adsbFeeders.planefinder;
 in {
   options.services.adsbFeeders.planefinder = {
+    meta = {
+      maintainers = ["j4v3l"];
+      description = "Run SDR-Enthusiasts PlaneFinder feeder container";
+    };
     enable = lib.mkEnableOption "Run SDR-Enthusiasts PlaneFinder feeder container";
 
     backend = lib.mkOption {

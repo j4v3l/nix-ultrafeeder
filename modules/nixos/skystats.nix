@@ -6,14 +6,22 @@
   cfg = config.services.skystats;
 
   hostTcpPorts = let
-    toPort = p: let
-      m = lib.strings.match "^([0-9]+):.*$" p;
+    toHostPort = p: let
+      parts = lib.splitString ":" p;
     in
-      if m == null
+      if (builtins.length parts) < 2
       then null
-      else lib.toInt (builtins.elemAt m 0);
+      else let
+        hostPort =
+          if (builtins.length parts) == 2
+          then builtins.elemAt parts 0
+          else builtins.elemAt parts 1;
+      in
+        if lib.isInt (builtins.tryEval (lib.toInt hostPort)).value
+        then lib.toInt hostPort
+        else null;
   in
-    lib.filter (x: x != null) (map toPort cfg.ports);
+    lib.filter (x: x != null) (map toHostPort cfg.ports);
 
   volumeHostDirs = let
     hostPart = v: let
@@ -51,6 +59,10 @@
     // lib.optionalAttrs (cfg.database.password != null) {POSTGRES_PASSWORD = cfg.database.password;};
 in {
   options.services.skystats = {
+    meta = {
+      maintainers = ["j4v3l"];
+      description = "Run Skystats (web UI + daemon) with a PostgreSQL DB via oci-containers";
+    };
     enable = lib.mkEnableOption "Run Skystats (web UI + daemon) with a PostgreSQL DB via oci-containers";
 
     backend = lib.mkOption {

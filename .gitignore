@@ -1,9 +1,10 @@
 # Nix
 /result
 /result-*
-/.direnv
-/.envrc
-
+/.direnv/
+# NixOS test results
+/tests/result-*
+/tests/result
 # macOS
 .DS_Store
 
@@ -21,5 +22,6 @@
 /secrets/*.agekey
 /secrets/key.txt
 /secrets/*.key
-
-
+# node modules
+docs/node_modules
+docs/docs/.vitepress/cache

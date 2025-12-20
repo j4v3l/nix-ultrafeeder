@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "GitHub.vscode-pull-request-github",
+    "ms-python.python",
+    "ms-azuretools.vscode-docker",
+    "pre-commit.pre-commit-vscode"
+  ]
+}

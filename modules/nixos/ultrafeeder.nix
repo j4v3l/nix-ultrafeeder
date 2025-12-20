@@ -10,14 +10,23 @@
   # - "127.0.0.1:8080:80"
   # We only open firewall for simple leading host port mappings.
   hostTcpPorts = let
-    toPort = p: let
-      m = lib.strings.match "^([0-9]+):.*$" p;
+    toHostPort = p: let
+      parts = lib.splitString ":" p;
+      # "8080:80" -> [8080, 80]; "127.0.0.1:8080:80" -> [127.0.0.1, 8080, 80]
     in
-      if m == null
+      if (builtins.length parts) < 2
       then null
-      else lib.toInt (builtins.elemAt m 0);
+      else let
+        hostPort =
+          if (builtins.length parts) == 2
+          then builtins.elemAt parts 0
+          else builtins.elemAt parts 1;
+      in
+        if lib.isInt (builtins.tryEval (lib.toInt hostPort)).value
+        then lib.toInt hostPort
+        else null;
   in
-    lib.filter (x: x != null) (map toPort cfg.ports);
+    lib.filter (x: x != null) (map toHostPort cfg.ports);
 
   # Create tmpfiles rules for host directories listed in volume mappings.
   # Supports entries like:
@@ -34,6 +43,10 @@
     lib.unique (lib.filter (p: p != null && lib.hasPrefix "/" p) (map hostPart cfg.volumes));
 in {
   options.services.ultrafeeder = {
+    meta = {
+      maintainers = ["j4v3l"];
+      description = "Run SDR-Enthusiasts Ultrafeeder in a container (via oci-containers)";
+    };
     enable = lib.mkEnableOption "Run ADSB-Ultrafeeder in a container (via oci-containers)";
 
     backend = lib.mkOption {
@@ -175,9 +188,10 @@ in {
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    # Merge ULTRAFEEDER_CONFIG fragments (if configured)
-    services.ultrafeeder.environment = let
+  config = lib.mkIf cfg.enable (let
+    # Merge ULTRAFEEDER_CONFIG fragments (if configured) into the container env
+    # without discarding user-provided env vars.
+    ultrafeederEnvMerged = let
       base = cfg.environment.ULTRAFEEDER_CONFIG or null;
       mlathubFrags = map (i: "mlathub,${i.host},${toString i.port},${i.protocol}") cfg.mlatHubInputs;
       frags = cfg.ultrafeederConfigFragments ++ mlathubFrags;
@@ -191,14 +205,14 @@ in {
     in
       cfg.environment
       // lib.optionalAttrs (final != null) {ULTRAFEEDER_CONFIG = final;};
-
+  in {
     virtualisation.oci-containers = {
       backend = lib.mkDefault cfg.backend;
 
       containers.ultrafeeder = {
         image = "${cfg.image}:${cfg.tag}";
         autoStart = true;
-        inherit (config.services.ultrafeeder) environment;
+        environment = ultrafeederEnvMerged;
         inherit (cfg) environmentFiles volumes ports;
         extraOptions =
           cfg.extraOptions
@@ -209,5 +223,5 @@ in {
     systemd.tmpfiles.rules = lib.mkIf cfg.createHostDirs (map (d: "d ${d} 0755 root root -") volumeHostDirs);
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall hostTcpPorts;
-  };
+  });
 }
