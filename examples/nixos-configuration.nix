@@ -37,7 +37,13 @@ _: {
     ];
 
     # USB access is platform-specific; you may prefer a more specific device mapping.
+    # Set once via ultra.defaults.ultrafeeder.device, or per-host here.
+    # For multiple devices, use extraOptions with multiple --device entries.
     device = "/dev/bus/usb";
+    # extraOptions = [
+    #   "--device=/dev/bus/usb/001/002"
+    #   "--device=/dev/bus/usb/001/003"
+    # ];
 
     # openFirewall = true;
   };
@@ -87,12 +93,17 @@ _: {
   #   };
   # };
 
-  # Optional feeder containers (FlightAware/PiAware, FR24, PlaneFinder, AirNav Radar)
+  # Optional feeder containers (FlightAware/PiAware, FR24, PlaneFinder, AirNav Radar, ADSBHub, OpenSky, RadarVirtuel, Radar1090 UK) + airband
   #
   # services.adsbFeeders.piaware.enable = true;
   # services.adsbFeeders.flightradar24.enable = true;
   # services.adsbFeeders.planefinder.enable = true;
   # services.adsbFeeders.airnavradar.enable = true;
+  # services.adsbFeeders.adsbhub.enable = true;
+  # services.adsbFeeders.opensky.enable = true;
+  # services.adsbFeeders.radarvirtuel.enable = true;
+  # services.adsbFeeders.radar1090uk.enable = true;
+  # services.airband.enable = true;
   #
   # If you want secrets via sops-nix templates (matches keys in `secrets/example.secrets.yaml`):
   #

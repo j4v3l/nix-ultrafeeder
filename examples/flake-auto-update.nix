@@ -31,7 +31,7 @@
               # units = [ "docker-ultrafeeder.service" "docker-skystats.service" ];
             };
 
-            # Optional: metrics/storage/readsb tuning (matches module options)
+            # Optional: metrics/storage/readsb tuning (matches module options) and airband
             # ultrafeeder.prometheus.enable = false; # set true to expose 9273
             # ultrafeeder.storage.timelapseDir = "/opt/adsb/ultrafeeder/timelapse1090";
             # ultrafeeder.storage.offlineMapsDir = "/usr/local/share/osm_tiles_offline";
@@ -44,6 +44,19 @@
             #   biastee = true;
             #   uat = true; # enable UAT/978
             # };
+
+            # Optional: devices (set once via ultra.defaults.ultrafeeder.device or per-host).
+            # For multiple devices, use extraOptions with multiple --device entries.
+            # ultrafeeder.device = "/dev/bus/usb";
+            # ultrafeeder.extraOptions = [
+            #   "--device=/dev/bus/usb/001/002"
+            #   "--device=/dev/bus/usb/001/003"
+            # ];
+
+            # services.airband.enable = true;
+            # services.airband.device = "/dev/bus/usb";
+            # services.airband.ports = [ "8000:8000" "8001:8001" ];
+            # services.airband.volumes = [ "/opt/adsb/airband:/run/rtlsdr-airband" ];
           };
         })
       ];

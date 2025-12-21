@@ -15,9 +15,16 @@ and [`tomcarman/skystats`](https://github.com/tomcarman/skystats) using `virtual
 - **`nixosModules.ultrafeeder`**: Configures an `oci-containers` container named `ultrafeeder`
 - **`nixosModules.skystats`**: Configures `skystats` + a companion `postgres` container (matches the upstream Docker setup)
 - **`nixosModules.piaware`**, **`nixosModules.flightradar24`**, **`nixosModules.planefinder`**, **`nixosModules.airnavradar`**: Optional feeder containers that read from Ultrafeeder’s BEAST port
+- **`nixosModules.adsbhub`**, **`nixosModules.opensky`**, **`nixosModules.radarvirtuel`**, **`nixosModules.radar1090uk`**: Additional feeder containers
+- **`nixosModules.airband`**: Runs rtlsdr-airband + icecast for ATC audio
 - **`nixosModules.ultra`**: Convenience module that imports **`sops-nix`** + both services + secret integration
 - **`nixosModules.containerAutoUpdate`**: Optional timered auto-pull + restart helper for docker/podman images used here
+- **`nixosModules.defaults`**: Shared defaults you can override once under `ultra.defaults.*`
 - **Typed options** for env vars, ports, volumes, backend choice, and basic host-dir creation
+
+### Host prep (RTL-SDR)
+
+If you use RTL-SDR dongles, blacklist the DVB kernel modules so the containers can claim the devices (otherwise you’ll see “Device or resource busy”). Follow the SDR-Enthusiasts guide: https://sdr-enthusiasts.gitbook.io/ads-b/setting-up-rtl-sdrs/blacklist-kernel-modules
 
 ### Use in your system flake
 
@@ -34,7 +41,8 @@ Add this repo as an input and import the modules you want:
     nixosConfigurations.myHost = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        # Includes sops-nix + both services + env-file secret injection helpers:
+        # Includes shared defaults + sops-nix + both services + env-file secret injection helpers:
+        nix-ultrafeeder.nixosModules.defaults
         nix-ultrafeeder.nixosModules.ultra
         # Optional: auto-update container images and restart on digest changes:
         nix-ultrafeeder.nixosModules.containerAutoUpdate
@@ -70,6 +78,15 @@ Add this repo as an input and import the modules you want:
             onCalendar = "*-*-* 03:00:00"; # daily at 03:00
             # images/units default to the enabled modules; override if needed
           };
+
+          # Device passthrough: set once via ultra.defaults.ultrafeeder.device
+          # or per-host here. For multiple devices, use extraOptions with
+          # repeated --device entries.
+          # services.ultrafeeder.device = "/dev/bus/usb";
+          # services.ultrafeeder.extraOptions = [
+          #   "--device=/dev/bus/usb/001/002"
+          #   "--device=/dev/bus/usb/001/003"
+          # ];
         })
       ];
     };
@@ -162,6 +179,16 @@ Module namespace: **`services.ultrafeeder`**
 - **`storage.*`**: convenience mounts for timelapse1090 data and offline map tiles
 - **`telemetry.*`**: optional diskstats/thermal zone mounts for graphs1090 metrics
 - **`readsb.*`**: toggles for autogain, gain, ppm, biastee, and UAT/978
+
+Module namespace: **`services.airband`**
+
+- **`enable`**: run the rtlsdr-airband + icecast container
+- **`backend`**: docker (default) or podman
+- **`image`/`tag`**: defaults to `ghcr.io/sdr-enthusiasts/docker-rtlsdrairband:latest`
+- **`device`**: optional SDR device to pass through (use extraOptions for multiple)
+- **`environment`/`environmentFiles`**: pass RTLSDRAIRBAND_*/ICECAST_* and secrets
+- **`volumes`**: e.g., `/opt/adsb/airband:/run/rtlsdr-airband` for custom configs/recordings
+- **`ports`**: defaults to `8000:8000` (icecast/web) and `8001:8001` (Prometheus stats)
 
 Module namespace: **`services.skystats`**
 

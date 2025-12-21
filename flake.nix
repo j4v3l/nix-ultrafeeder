@@ -21,10 +21,17 @@
     flightradar24Module = import ./modules/nixos/feeders/flightradar24.nix;
     planefinderModule = import ./modules/nixos/feeders/planefinder.nix;
     airnavradarModule = import ./modules/nixos/feeders/airnavradar.nix;
+    airbandModule = import ./modules/nixos/airband.nix;
+    adsbhubModule = import ./modules/nixos/feeders/adsbhub.nix;
+    openskyModule = import ./modules/nixos/feeders/opensky.nix;
+    radarvirtuelModule = import ./modules/nixos/feeders/radarvirtuel.nix;
+    radar1090ukModule = import ./modules/nixos/feeders/radar1090uk.nix;
+    defaultsModule = import ./modules/nixos/defaults.nix;
     autoUpdateModule = import ./modules/nixos/container-auto-update.nix;
     sopsIntegrationModule = import ./modules/nixos/sops-integration.nix;
     ultraModule = {
       imports = [
+        defaultsModule
         sops-nix.nixosModules.sops
         ultrafeederModule
         skystatsModule
@@ -32,6 +39,11 @@
         flightradar24Module
         planefinderModule
         airnavradarModule
+        airbandModule
+        adsbhubModule
+        openskyModule
+        radarvirtuelModule
+        radar1090ukModule
         sopsIntegrationModule
       ];
     };
@@ -44,6 +56,12 @@
         flightradar24 = flightradar24Module;
         planefinder = planefinderModule;
         airnavradar = airnavradarModule;
+        airband = airbandModule;
+        adsbhub = adsbhubModule;
+        opensky = openskyModule;
+        radarvirtuel = radarvirtuelModule;
+        radar1090uk = radar1090ukModule;
+        defaults = defaultsModule;
         containerAutoUpdate = autoUpdateModule;
         inherit (sops-nix.nixosModules) sops;
         ultra = ultraModule;
