@@ -3,6 +3,7 @@
     ".": {
       "release-type": "simple",
       "changelog-path": "CHANGELOG.md",
+      "bootstrap-sha": "d65053a203edcec2ad06120bf11d1f245b81e7ce",
       "extra-files": [
         "VERSION"
       ]

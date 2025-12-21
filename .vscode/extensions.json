@@ -3,6 +3,7 @@
     "GitHub.vscode-pull-request-github",
     "ms-python.python",
     "ms-azuretools.vscode-docker",
-    "pre-commit.pre-commit-vscode"
+    "pre-commit.pre-commit-vscode",
+    "vivaxy.vscode-conventional-commits"
   ]
 }

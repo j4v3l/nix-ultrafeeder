@@ -13,6 +13,16 @@
         "reveal": "always"
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Install pre-commit git hooks",
+      "type": "shell",
+      "command": "pre-commit install --hook-type pre-commit --hook-type commit-msg --install-hooks",
+      "group": "none",
+      "presentation": {
+        "reveal": "always"
+      },
+      "problemMatcher": []
     }
   ]
 }
