@@ -1,4 +1,5 @@
-## nix-ultrafeeder (Ultrafeeder + Skystats on NixOS)
+# nix-ultrafeeder (Ultrafeeder + Skystats on NixOS)
+
 [![CI](https://github.com/j4v3l/nix-ultrafeeder/actions/workflows/ci.yml/badge.svg)](https://github.com/j4v3l/nix-ultrafeeder/actions/workflows/ci.yml)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Nix](https://img.shields.io/badge/Nix-flakes-5277C3?logo=nixos&logoColor=white)
@@ -9,7 +10,7 @@ This repo is a small Nix flake that provides a **NixOS module** to run
 and [`tomcarman/skystats`](https://github.com/tomcarman/skystats) using `virtualisation.oci-containers`
 (Docker or Podman), with **sops/age** support for secrets.
 
-### What you get
+## What you get
 
 - **`nixosModules.ultrafeeder`**: Configures an `oci-containers` container named `ultrafeeder`
 - **`nixosModules.skystats`**: Configures `skystats` + a companion `postgres` container (matches the upstream Docker setup)
@@ -157,6 +158,10 @@ Module namespace: **`services.ultrafeeder`**
 - **`extraOptions`**: extra CLI flags to the backend (e.g. `--network=host`)
 - **`ultrafeederConfigFragments`**: append extra `ULTRAFEEDER_CONFIG` fragments
 - **`mlatHubInputs`**: convenience for `ULTRAFEEDER_CONFIG=mlathub,...` ingest of external MLAT results (e.g. from PiAware)
+- **`prometheus.*`**: enable Prometheus/telegraf metrics and map the metrics port (defaults to `9273:9273`)
+- **`storage.*`**: convenience mounts for timelapse1090 data and offline map tiles
+- **`telemetry.*`**: optional diskstats/thermal zone mounts for graphs1090 metrics
+- **`readsb.*`**: toggles for autogain, gain, ppm, biastee, and UAT/978
 
 Module namespace: **`services.skystats`**
 

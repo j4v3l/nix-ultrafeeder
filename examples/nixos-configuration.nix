@@ -143,4 +143,20 @@ _: {
   #   # images = [ "ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder:latest" ];
   #   # units = [ "docker-ultrafeeder.service" "docker-skystats.service" ];
   # };
+
+  # Optional: metrics, storage, and readsb tuning for ultrafeeder
+  #
+  # services.ultrafeeder.prometheus.enable = false; # set true to expose 9273
+  # services.ultrafeeder.prometheus.port = "9273:9273";
+  # services.ultrafeeder.storage.timelapseDir = "/opt/adsb/ultrafeeder/timelapse1090";
+  # services.ultrafeeder.storage.offlineMapsDir = "/usr/local/share/osm_tiles_offline";
+  # services.ultrafeeder.telemetry.mountDiskstats = true;
+  # services.ultrafeeder.telemetry.thermalZone = "/sys/class/thermal/thermal_zone0";
+  # services.ultrafeeder.readsb = {
+  #   autogain = true;
+  #   gain = "autogain";
+  #   ppm = 1;
+  #   biastee = true;
+  #   uat = true; # enable UAT/978
+  # };
 }

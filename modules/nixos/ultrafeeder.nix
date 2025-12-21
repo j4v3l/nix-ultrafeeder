@@ -132,6 +132,85 @@ in {
       '';
     };
 
+    prometheus = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Expose Prometheus metrics (telegraf) from the ultrafeeder image.";
+      };
+
+      port = lib.mkOption {
+        type = lib.types.str;
+        default = "9273:9273";
+        description = "Port mapping for the Prometheus endpoint (only applied when enable = true).";
+      };
+    };
+
+    storage = {
+      timelapseDir = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "/opt/adsb/ultrafeeder/timelapse1090";
+        description = "Host directory for timelapse1090 data (adds volume if set).";
+      };
+
+      offlineMapsDir = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "/usr/local/share/osm_tiles_offline";
+        description = "Host directory containing offline map tiles (mounts to /usr/local/share/osm_tiles_offline).";
+      };
+    };
+
+    telemetry = {
+      mountDiskstats = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Mount /proc/diskstats read-only for graphs1090 metrics.";
+      };
+
+      thermalZone = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "/sys/class/thermal/thermal_zone0";
+        description = "Host thermal zone to pass through for CPU temp metrics (read-only).";
+      };
+    };
+
+    readsb = {
+      autogain = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Enable autogain (sets AUTOGAIN=true).";
+      };
+
+      gain = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "autogain";
+        description = "Explicit READSB_GAIN value (e.g., autogain or numeric).";
+      };
+
+      ppm = lib.mkOption {
+        type = lib.types.nullOr lib.types.int;
+        default = null;
+        example = 1;
+        description = "READSB_PPM correction.";
+      };
+
+      biastee = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Enable READSB_BIASTEE for RTL-SDR bias tee.";
+      };
+
+      uat = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Enable UAT/978 (sets UAT_ENABLE=true).";
+      };
+    };
+
     environmentFiles = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
@@ -211,6 +290,24 @@ in {
     in
       cfg.environment
       // lib.optionalAttrs (final != null) {ULTRAFEEDER_CONFIG = final;};
+
+    telemetryEnv =
+      lib.optionalAttrs cfg.prometheus.enable {PROMETHEUS_ENABLE = "true";}
+      // lib.optionalAttrs cfg.readsb.autogain {AUTOGAIN = "true";}
+      // lib.optionalAttrs (cfg.readsb.gain != null) {READSB_GAIN = cfg.readsb.gain;}
+      // lib.optionalAttrs (cfg.readsb.ppm != null) {READSB_PPM = toString cfg.readsb.ppm;}
+      // lib.optionalAttrs cfg.readsb.biastee {READSB_BIASTEE = "true";}
+      // lib.optionalAttrs cfg.readsb.uat {UAT_ENABLE = "true";};
+
+    extraPorts =
+      lib.optional cfg.prometheus.enable cfg.prometheus.port;
+
+    extraVolumes =
+      lib.optional (cfg.storage.timelapseDir != null) "${cfg.storage.timelapseDir}:/var/timelapse1090"
+      ++ lib.optional (cfg.storage.offlineMapsDir != null)
+      "${cfg.storage.offlineMapsDir}:/usr/local/share/osm_tiles_offline"
+      ++ lib.optional cfg.telemetry.mountDiskstats "/proc/diskstats:/proc/diskstats:ro"
+      ++ lib.optional (cfg.telemetry.thermalZone != null) "${cfg.telemetry.thermalZone}:/sys/class/thermal/thermal_zone0:ro";
   in {
     virtualisation.oci-containers = {
       backend = lib.mkDefault cfg.backend;
@@ -219,8 +316,10 @@ in {
         {
           image = "${cfg.image}:${cfg.tag}";
           autoStart = true;
-          environment = ultrafeederEnvMerged;
-          inherit (cfg) environmentFiles volumes ports;
+          environment = ultrafeederEnvMerged // telemetryEnv;
+          inherit (cfg) environmentFiles;
+          volumes = cfg.volumes ++ extraVolumes;
+          ports = cfg.ports ++ extraPorts;
           extraOptions =
             cfg.extraOptions
             ++ lib.optionals (cfg.device != null) ["--device=${cfg.device}:${cfg.device}"];
