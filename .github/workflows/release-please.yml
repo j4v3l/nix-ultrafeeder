@@ -15,7 +15,9 @@ jobs:
       - name: Release PR / Tag
         uses: googleapis/release-please-action@v4
         with:
-          command: manifest
+          release-type: simple
           config-file: .release-please-config.json
           manifest-file: .release-please-manifest.json
+          target-branch: main
+          release-as: 0.1.0
 
