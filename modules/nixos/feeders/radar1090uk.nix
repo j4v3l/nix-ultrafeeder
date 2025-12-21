@@ -30,6 +30,12 @@ in {
       description = "Radar1090 UK feeder image tag.";
     };
 
+    imageFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Optional local image tarball for the Radar1090 UK container.";
+    };
+
     beastHost = lib.mkOption {
       type = lib.types.str;
       default = "ultrafeeder";
@@ -65,17 +71,19 @@ in {
     virtualisation.oci-containers = {
       backend = lib.mkDefault cfg.backend;
 
-      containers.radar1090uk = {
-        image = "${cfg.image}:${cfg.tag}";
-        autoStart = true;
-        environment =
-          {
-            BEASTHOST = cfg.beastHost;
-            BEASTPORT = toString cfg.beastPort;
-          }
-          // cfg.environment;
-        inherit (cfg) environmentFiles extraOptions;
-      };
+      containers.radar1090uk =
+        {
+          image = "${cfg.image}:${cfg.tag}";
+          autoStart = true;
+          environment =
+            {
+              BEASTHOST = cfg.beastHost;
+              BEASTPORT = toString cfg.beastPort;
+            }
+            // cfg.environment;
+          inherit (cfg) environmentFiles extraOptions;
+        }
+        // lib.optionalAttrs (cfg.imageFile != null) {inherit (cfg) imageFile;};
     };
   };
 }

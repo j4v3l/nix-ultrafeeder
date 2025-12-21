@@ -30,6 +30,12 @@ in {
       description = "PiAware image tag.";
     };
 
+    imageFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Optional local image tarball for the PiAware container.";
+    };
+
     beastHost = lib.mkOption {
       type = lib.types.str;
       default = "ultrafeeder";
@@ -102,23 +108,25 @@ in {
     virtualisation.oci-containers = {
       backend = lib.mkDefault cfg.backend;
 
-      containers.piaware = {
-        image = "${cfg.image}:${cfg.tag}";
-        autoStart = true;
-        environment =
-          {
-            # Most SDR-E feeders accept BEASTHOST/BEASTPORT to read data from ultrafeeder.
-            BEASTHOST = cfg.beastHost;
-            BEASTPORT = toString cfg.beastPort;
-          }
-          // lib.optionalAttrs cfg.allowMlat {ALLOW_MLAT = "true";}
-          // lib.optionalAttrs cfg.mlatResults.pushToUltrafeeder.enable {
-            MLAT_RESULTS_BEASTHOST = cfg.mlatResults.pushToUltrafeeder.beastHost;
-            MLAT_RESULTS_BEASTPORT = toString cfg.mlatResults.pushToUltrafeeder.beastPort;
-          }
-          // cfg.environment;
-        inherit (cfg) environmentFiles extraOptions;
-      };
+      containers.piaware =
+        {
+          image = "${cfg.image}:${cfg.tag}";
+          autoStart = true;
+          environment =
+            {
+              # Most SDR-E feeders accept BEASTHOST/BEASTPORT to read data from ultrafeeder.
+              BEASTHOST = cfg.beastHost;
+              BEASTPORT = toString cfg.beastPort;
+            }
+            // lib.optionalAttrs cfg.allowMlat {ALLOW_MLAT = "true";}
+            // lib.optionalAttrs cfg.mlatResults.pushToUltrafeeder.enable {
+              MLAT_RESULTS_BEASTHOST = cfg.mlatResults.pushToUltrafeeder.beastHost;
+              MLAT_RESULTS_BEASTPORT = toString cfg.mlatResults.pushToUltrafeeder.beastPort;
+            }
+            // cfg.environment;
+          inherit (cfg) environmentFiles extraOptions;
+        }
+        // lib.optionalAttrs (cfg.imageFile != null) {inherit (cfg) imageFile;};
     };
   };
 }

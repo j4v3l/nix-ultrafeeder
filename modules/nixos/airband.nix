@@ -25,6 +25,12 @@ in {
       description = "rtlsdr-airband container image.";
     };
 
+    imageFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Optional local image tarball for the airband container.";
+    };
+
     tag = lib.mkOption {
       type = lib.types.str;
       default = "latest";
@@ -75,14 +81,16 @@ in {
     virtualisation.oci-containers = {
       backend = lib.mkDefault cfg.backend;
 
-      containers.airband = {
-        image = "${cfg.image}:${cfg.tag}";
-        autoStart = true;
-        inherit (cfg) environment environmentFiles volumes ports;
-        extraOptions =
-          cfg.extraOptions
-          ++ lib.optionals (cfg.device != null) ["--device=${cfg.device}:${cfg.device}"];
-      };
+      containers.airband =
+        {
+          image = "${cfg.image}:${cfg.tag}";
+          autoStart = true;
+          inherit (cfg) environment environmentFiles volumes ports;
+          extraOptions =
+            cfg.extraOptions
+            ++ lib.optionals (cfg.device != null) ["--device=${cfg.device}:${cfg.device}"];
+        }
+        // lib.optionalAttrs (cfg.imageFile != null) {inherit (cfg) imageFile;};
     };
   };
 }

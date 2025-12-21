@@ -83,6 +83,12 @@ in {
       description = "Skystats image tag.";
     };
 
+    imageFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Optional local image tarball for the Skystats container.";
+    };
+
     dbImage = lib.mkOption {
       type = lib.types.str;
       default = "postgres";
@@ -93,6 +99,12 @@ in {
       type = lib.types.str;
       default = "17";
       description = "PostgreSQL image tag.";
+    };
+
+    dbImageFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Optional local image tarball for the Postgres companion container.";
     };
 
     readsbAircraftJsonUrl = lib.mkOption {
@@ -257,22 +269,26 @@ in {
       backend = lib.mkDefault cfg.backend;
 
       containers = {
-        "skystats-db" = {
-          image = "${cfg.dbImage}:${cfg.dbTag}";
-          autoStart = true;
-          environment = dbEnv;
-          inherit (cfg) dbEnvironmentFiles;
-          volumes = ["${cfg.database.dataDir}:/var/lib/postgresql/data"];
-          inherit (cfg) dbExtraOptions;
-        };
+        "skystats-db" =
+          {
+            image = "${cfg.dbImage}:${cfg.dbTag}";
+            autoStart = true;
+            environment = dbEnv;
+            environmentFiles = cfg.dbEnvironmentFiles;
+            volumes = ["${cfg.database.dataDir}:/var/lib/postgresql/data"];
+            extraOptions = cfg.dbExtraOptions;
+          }
+          // lib.optionalAttrs (cfg.dbImageFile != null) {imageFile = cfg.dbImageFile;};
 
-        skystats = {
-          image = "${cfg.image}:${cfg.tag}";
-          autoStart = true;
-          dependsOn = ["skystats-db"];
-          inherit (cfg) ports environmentFiles volumes extraOptions;
-          environment = appEnv // cfg.environment;
-        };
+        skystats =
+          {
+            image = "${cfg.image}:${cfg.tag}";
+            autoStart = true;
+            dependsOn = ["skystats-db"];
+            inherit (cfg) ports environmentFiles volumes extraOptions;
+            environment = appEnv // cfg.environment;
+          }
+          // lib.optionalAttrs (cfg.imageFile != null) {inherit (cfg) imageFile;};
       };
     };
 

@@ -30,6 +30,12 @@ in {
       description = "PlaneFinder image tag.";
     };
 
+    imageFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Optional local image tarball for the PlaneFinder container.";
+    };
+
     beastHost = lib.mkOption {
       type = lib.types.str;
       default = "ultrafeeder";
@@ -65,17 +71,19 @@ in {
     virtualisation.oci-containers = {
       backend = lib.mkDefault cfg.backend;
 
-      containers.planefinder = {
-        image = "${cfg.image}:${cfg.tag}";
-        autoStart = true;
-        environment =
-          {
-            BEASTHOST = cfg.beastHost;
-            BEASTPORT = toString cfg.beastPort;
-          }
-          // cfg.environment;
-        inherit (cfg) environmentFiles extraOptions;
-      };
+      containers.planefinder =
+        {
+          image = "${cfg.image}:${cfg.tag}";
+          autoStart = true;
+          environment =
+            {
+              BEASTHOST = cfg.beastHost;
+              BEASTPORT = toString cfg.beastPort;
+            }
+            // cfg.environment;
+          inherit (cfg) environmentFiles extraOptions;
+        }
+        // lib.optionalAttrs (cfg.imageFile != null) {inherit (cfg) imageFile;};
     };
   };
 }

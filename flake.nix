@@ -156,6 +156,47 @@
                 inherit pkgs;
                 ultrafeederModulePath = ./modules/nixos/ultrafeeder.nix;
               };
+              ultrafeeder-options = import ./tests/ultrafeeder-options.nix {
+                inherit pkgs;
+                ultrafeederModulePath = ./modules/nixos/ultrafeeder.nix;
+              };
+              ultra-defaults = import ./tests/ultra-defaults.nix {
+                inherit pkgs;
+                ultrafeederModulePath = ./modules/nixos/ultrafeeder.nix;
+                defaultsModulePath = ./modules/nixos/defaults.nix;
+                piawareModulePath = ./modules/nixos/feeders/piaware.nix;
+                adsbhubModulePath = ./modules/nixos/feeders/adsbhub.nix;
+                airnavradarModulePath = ./modules/nixos/feeders/airnavradar.nix;
+                flightradar24ModulePath = ./modules/nixos/feeders/flightradar24.nix;
+                openskyModulePath = ./modules/nixos/feeders/opensky.nix;
+                planefinderModulePath = ./modules/nixos/feeders/planefinder.nix;
+                radarvirtuelModulePath = ./modules/nixos/feeders/radarvirtuel.nix;
+                radar1090ukModulePath = ./modules/nixos/feeders/radar1090uk.nix;
+                airbandModulePath = ./modules/nixos/airband.nix;
+                skystatsModulePath = ./modules/nixos/skystats.nix;
+              };
+              feeders-airband = import ./tests/feeders-airband.nix {
+                inherit pkgs;
+                feedersModulePaths = [
+                  ./modules/nixos/feeders/piaware.nix
+                  ./modules/nixos/feeders/flightradar24.nix
+                  ./modules/nixos/feeders/planefinder.nix
+                  ./modules/nixos/feeders/airnavradar.nix
+                  ./modules/nixos/feeders/adsbhub.nix
+                  ./modules/nixos/feeders/opensky.nix
+                  ./modules/nixos/feeders/radarvirtuel.nix
+                  ./modules/nixos/feeders/radar1090uk.nix
+                ];
+                airbandModulePath = ./modules/nixos/airband.nix;
+              };
+              skystats = import ./tests/skystats.nix {
+                inherit pkgs;
+                skystatsModulePath = ./modules/nixos/skystats.nix;
+              };
+              container-auto-update = import ./tests/container-auto-update.nix {
+                inherit pkgs;
+                containerAutoUpdateModulePath = ./modules/nixos/container-auto-update.nix;
+              };
             }
             else {}
           );
