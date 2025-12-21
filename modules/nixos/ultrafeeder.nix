@@ -9,7 +9,7 @@
   # - "8080:80"
   # - "127.0.0.1:8080:80"
   # We only open firewall for simple leading host port mappings.
-  hostTcpPorts = let
+  hostTcpPortsFrom = ports: let
     toHostPort = p: let
       parts = lib.splitString ":" p;
       # "8080:80" -> [8080, 80]; "127.0.0.1:8080:80" -> [127.0.0.1, 8080, 80]
@@ -26,13 +26,13 @@
         then lib.toInt hostPort
         else null;
   in
-    lib.filter (x: x != null) (map toHostPort cfg.ports);
+    lib.filter (x: x != null) (map toHostPort ports);
 
   # Create tmpfiles rules for host directories listed in volume mappings.
   # Supports entries like:
   # - "/opt/adsb/ultrafeeder/globe_history:/var/globe_history"
   # - "/opt/adsb/ultrafeeder/collectd:/var/lib/collectd:rw"
-  volumeHostDirs = let
+  volumeHostDirsFrom = volumes: let
     hostPart = v: let
       parts = lib.splitString ":" v;
     in
@@ -40,7 +40,7 @@
       then null
       else builtins.elemAt parts 0;
   in
-    lib.unique (lib.filter (p: p != null && lib.hasPrefix "/" p) (map hostPart cfg.volumes));
+    lib.unique (lib.filter (p: p != null && lib.hasPrefix "/" p) (map hostPart volumes));
 in {
   options.services.ultrafeeder = {
     meta = {
@@ -308,6 +308,12 @@ in {
       "${cfg.storage.offlineMapsDir}:/usr/local/share/osm_tiles_offline"
       ++ lib.optional cfg.telemetry.mountDiskstats "/proc/diskstats:/proc/diskstats:ro"
       ++ lib.optional (cfg.telemetry.thermalZone != null) "${cfg.telemetry.thermalZone}:/sys/class/thermal/thermal_zone0:ro";
+
+    portsMerged = cfg.ports ++ extraPorts;
+    volumesMerged = cfg.volumes ++ extraVolumes;
+    hostTcpPorts = hostTcpPortsFrom portsMerged;
+    volumeHostDirs = volumeHostDirsFrom volumesMerged;
+    volumeHostDirsUser = lib.filter (p: !(lib.hasPrefix "/proc/" p || lib.hasPrefix "/sys/" p)) volumeHostDirs;
   in {
     virtualisation.oci-containers = {
       backend = lib.mkDefault cfg.backend;
@@ -318,8 +324,8 @@ in {
           autoStart = true;
           environment = ultrafeederEnvMerged // telemetryEnv;
           inherit (cfg) environmentFiles;
-          volumes = cfg.volumes ++ extraVolumes;
-          ports = cfg.ports ++ extraPorts;
+          volumes = volumesMerged;
+          ports = portsMerged;
           extraOptions =
             cfg.extraOptions
             ++ lib.optionals (cfg.device != null) ["--device=${cfg.device}:${cfg.device}"];
@@ -327,7 +333,7 @@ in {
         // lib.optionalAttrs (cfg.imageFile != null) {inherit (cfg) imageFile;};
     };
 
-    systemd.tmpfiles.rules = lib.mkIf cfg.createHostDirs (map (d: "d ${d} 0755 root root -") volumeHostDirs);
+    systemd.tmpfiles.rules = lib.mkIf cfg.createHostDirs (map (d: "d ${d} 0755 root root -") volumeHostDirsUser);
 
     networking.firewall.allowedTCPPorts = lib.mkIf cfg.openFirewall hostTcpPorts;
   });
