@@ -132,4 +132,15 @@ _: {
   # services.ultrafeeder.mlatHubInputs = [
   #   { host = "piaware"; port = 30105; protocol = "beast_in"; }
   # ];
+
+  # Optional: auto-pull images on a schedule and restart containers if digests change.
+  #
+  # services.containerAutoUpdate = {
+  #   enable = true;
+  #   backend = "docker"; # or "podman"
+  #   onCalendar = "*-*-* 03:00:00"; # daily at 03:00
+  #   # images/units default to the enabled modules above; override if needed:
+  #   # images = [ "ghcr.io/sdr-enthusiasts/docker-adsb-ultrafeeder:latest" ];
+  #   # units = [ "docker-ultrafeeder.service" "docker-skystats.service" ];
+  # };
 }

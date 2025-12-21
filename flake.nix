@@ -21,6 +21,7 @@
     flightradar24Module = import ./modules/nixos/feeders/flightradar24.nix;
     planefinderModule = import ./modules/nixos/feeders/planefinder.nix;
     airnavradarModule = import ./modules/nixos/feeders/airnavradar.nix;
+    autoUpdateModule = import ./modules/nixos/container-auto-update.nix;
     sopsIntegrationModule = import ./modules/nixos/sops-integration.nix;
     ultraModule = {
       imports = [
@@ -36,7 +37,6 @@
     };
   in
     {
-      inherit version;
       nixosModules = {
         ultrafeeder = ultrafeederModule;
         skystats = skystatsModule;
@@ -44,6 +44,7 @@
         flightradar24 = flightradar24Module;
         planefinder = planefinderModule;
         airnavradar = airnavradarModule;
+        containerAutoUpdate = autoUpdateModule;
         inherit (sops-nix.nixosModules) sops;
         ultra = ultraModule;
         default = ultrafeederModule;
@@ -140,6 +141,20 @@
             }
             else {}
           );
+
+        packages.version = pkgs.writeText "nix-ultrafeeder-version" ''
+          ${version}
+        '';
+
+        apps.version = {
+          type = "app";
+          program = "${pkgs.writeShellScriptBin "nix-ultrafeeder-version" ''
+            echo ${version}
+          ''}/bin/nix-ultrafeeder-version";
+          meta = {
+            description = "Print nix-ultrafeeder version";
+          };
+        };
 
         packages.default = pkgs.writeText "nix-ultrafeeder.txt" ''
           This flake provides NixOS modules:
