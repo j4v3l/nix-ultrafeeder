@@ -15,6 +15,7 @@ and [`tomcarman/skystats`](https://github.com/tomcarman/skystats) using `virtual
 - **`nixosModules.skystats`**: Configures `skystats` + a companion `postgres` container (matches the upstream Docker setup)
 - **`nixosModules.piaware`**, **`nixosModules.flightradar24`**, **`nixosModules.planefinder`**, **`nixosModules.airnavradar`**: Optional feeder containers that read from Ultrafeeder’s BEAST port
 - **`nixosModules.ultra`**: Convenience module that imports **`sops-nix`** + both services + secret integration
+- **`nixosModules.containerAutoUpdate`**: Optional timered auto-pull + restart helper for docker/podman images used here
 - **Typed options** for env vars, ports, volumes, backend choice, and basic host-dir creation
 
 ### Use in your system flake
@@ -34,6 +35,8 @@ Add this repo as an input and import the modules you want:
       modules = [
         # Includes sops-nix + both services + env-file secret injection helpers:
         nix-ultrafeeder.nixosModules.ultra
+        # Optional: auto-update container images and restart on digest changes:
+        nix-ultrafeeder.nixosModules.containerAutoUpdate
         ({ ... }: {
           services.ultrafeeder.enable = true;
           services.ultrafeeder.environment = {
@@ -58,6 +61,13 @@ Add this repo as an input and import the modules you want:
             aboveRadiusKm = 20;
             domesticCountryIso = "GB";
             logLevel = "INFO";
+          };
+
+          services.containerAutoUpdate = {
+            enable = true;
+            backend = "docker"; # or "podman"
+            onCalendar = "*-*-* 03:00:00"; # daily at 03:00
+            # images/units default to the enabled modules; override if needed
           };
         })
       ];
@@ -166,13 +176,23 @@ Module namespace: **`services.adsbFeeders.*`**
 - **`environment` / `environmentFiles`**: extra env vars + secret injection support
 - **`<feeder>.sops.*`**: enable sops-nix env file generation for that feeder’s key(s)
 
+Module namespace: **`services.containerAutoUpdate`**
+
+- **`enable`**: turn on the auto-update timer/service (default: disabled)
+- **`backend`**: `"docker"` (default) or `"podman"`; used for pulls/restarts
+- **`images`**: list of images to `pull` (defaults to images from enabled modules)
+- **`units`**: systemd units to restart on digest change (defaults to matching containers for enabled modules, e.g. `docker-ultrafeeder.service`)
+- **`onCalendar`**: systemd timer schedule (default: `daily`)
+
 ### Example
 
-See `examples/nixos-configuration.nix`.
+See `examples/nixos-configuration.nix` (module usage) and `examples/flake-auto-update.nix` (full flake including the auto-update helper).
 
 ### Releases & versioning
 
-- Version is tracked in `VERSION` and exposed as `flake.version`.
+- Version is tracked in `VERSION` and exposed via flake outputs:
+  - `nix eval .#packages.x86_64-linux.version`
+  - `nix run .#version`
 - Releases are automated via GitHub Actions (`release-please`):
   - Push/merge to `main` → Release PR with changelog + version bump.
   - Merging that PR tags `vX.Y.Z`, publishes GitHub Release notes, and updates `CHANGELOG.md`.
