@@ -8,9 +8,23 @@ pkgs.testers.nixosTest {
     imports = [ultrafeederModulePath];
     services.ultrafeeder = {
       enable = true;
+      backend = "docker";
+      image = "ultrafeeder-test";
+      tag = "latest";
       environment = {
         TZ = "UTC";
         READSB_DEVICE_TYPE = "rtlsdr";
+      };
+      imageFile = pkgs.dockerTools.buildImage {
+        name = "ultrafeeder-test";
+        tag = "latest";
+        copyToRoot = pkgs.buildEnv {
+          name = "ultrafeeder-test-root";
+          paths = [pkgs.busybox];
+        };
+        config = {
+          Cmd = ["sleep" "infinity"];
+        };
       };
       volumes = [
         "/tmp/globe_history:/var/globe_history"
@@ -21,7 +35,7 @@ pkgs.testers.nixosTest {
   };
   testScript = ''
     machine.start()
-    machine.wait_for_unit("oci-containers-ultrafeeder.service")
-    machine.succeed("systemctl status oci-containers-ultrafeeder.service")
+    machine.wait_for_unit("docker-ultrafeeder.service")
+    machine.wait_until_succeeds("docker inspect ultrafeeder --format '{{.State.Status}}' | grep running")
   '';
 }

@@ -40,6 +40,8 @@ Add this repo as an input and import the modules you want:
             TZ = "UTC";
             READSB_DEVICE_TYPE = "rtlsdr";
           };
+          # Offline / air-gapped? Preload an OCI tarball instead of pulling:
+          # services.ultrafeeder.imageFile = /path/to/ultrafeeder-image.tar.gz;
           services.ultrafeeder.volumes = [
             "/opt/adsb/ultrafeeder/globe_history:/var/globe_history"
             "/opt/adsb/ultrafeeder/collectd:/var/lib/collectd"
@@ -134,11 +136,15 @@ Module namespace: **`services.ultrafeeder`**
 - **`enable`**: enable the container
 - **`backend`**: `"docker"` (default) or `"podman"`
 - **`image`** / **`tag`**: image reference (defaults to GHCR `:latest`)
+- **`imageFile`**: optional OCI tarball to load instead of pulling (good for offline tests/hosts)
 - **`environment`**: env vars passed to the container
+- **`environmentFiles`**: env files passed through (pairs well with sops-nix templates)
 - **`volumes`**: bind mounts (optionally created via tmpfiles if `createHostDirs = true`)
-- **`ports`**: port mappings (defaults expose web UI + common readsb ports)
+- **`createHostDirs`**: create host dirs for volume sources via tmpfiles (default: true)
+- **`ports`**: port mappings (defaults expose 8080/30003/30005/30104)
 - **`device`**: optional `--device=...` passthrough (e.g. `/dev/bus/usb`)
 - **`openFirewall`**: if true, opens firewall for simple `HOSTPORT:...` entries in `ports`
+- **`extraOptions`**: extra CLI flags to the backend (e.g. `--network=host`)
 - **`ultrafeederConfigFragments`**: append extra `ULTRAFEEDER_CONFIG` fragments
 - **`mlatHubInputs`**: convenience for `ULTRAFEEDER_CONFIG=mlathub,...` ingest of external MLAT results (e.g. from PiAware)
 
@@ -163,3 +169,10 @@ Module namespace: **`services.adsbFeeders.*`**
 ### Example
 
 See `examples/nixos-configuration.nix`.
+
+### Releases & versioning
+
+- Version is tracked in `VERSION` and exposed as `flake.version`.
+- Releases are automated via GitHub Actions (`release-please`):
+  - Push/merge to `main` → Release PR with changelog + version bump.
+  - Merging that PR tags `vX.Y.Z`, publishes GitHub Release notes, and updates `CHANGELOG.md`.

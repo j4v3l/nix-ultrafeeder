@@ -61,6 +61,12 @@ in {
       description = "Container image repository.";
     };
 
+    imageFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = "Optional OCI image tarball to load instead of pulling from a registry (useful for offline tests).";
+    };
+
     tag = lib.mkOption {
       type = lib.types.str;
       default = "latest";
@@ -209,15 +215,17 @@ in {
     virtualisation.oci-containers = {
       backend = lib.mkDefault cfg.backend;
 
-      containers.ultrafeeder = {
-        image = "${cfg.image}:${cfg.tag}";
-        autoStart = true;
-        environment = ultrafeederEnvMerged;
-        inherit (cfg) environmentFiles volumes ports;
-        extraOptions =
-          cfg.extraOptions
-          ++ lib.optionals (cfg.device != null) ["--device=${cfg.device}:${cfg.device}"];
-      };
+      containers.ultrafeeder =
+        {
+          image = "${cfg.image}:${cfg.tag}";
+          autoStart = true;
+          environment = ultrafeederEnvMerged;
+          inherit (cfg) environmentFiles volumes ports;
+          extraOptions =
+            cfg.extraOptions
+            ++ lib.optionals (cfg.device != null) ["--device=${cfg.device}:${cfg.device}"];
+        }
+        // lib.optionalAttrs (cfg.imageFile != null) {inherit (cfg) imageFile;};
     };
 
     systemd.tmpfiles.rules = lib.mkIf cfg.createHostDirs (map (d: "d ${d} 0755 root root -") volumeHostDirs);

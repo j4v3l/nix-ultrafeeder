@@ -8,10 +8,24 @@ pkgs.testers.nixosTest {
     imports = [ultrafeederModulePath];
     services.ultrafeeder = {
       enable = true;
+      backend = "docker";
+      image = "ultrafeeder-test";
+      tag = "latest";
       environment = {
         TZ = "UTC";
         CUSTOM_ENV = "present";
         ULTRAFEEDER_CONFIG = "base";
+      };
+      imageFile = pkgs.dockerTools.buildImage {
+        name = "ultrafeeder-test";
+        tag = "latest";
+        copyToRoot = pkgs.buildEnv {
+          name = "ultrafeeder-test-root";
+          paths = [pkgs.busybox];
+        };
+        config = {
+          Cmd = ["sleep" "infinity"];
+        };
       };
       ultrafeederConfigFragments = ["extra"];
       mlatHubInputs = [
@@ -25,8 +39,9 @@ pkgs.testers.nixosTest {
   };
   testScript = ''
     machine.start()
-    machine.wait_for_unit("oci-containers-ultrafeeder.service")
-    machine.succeed("systemctl show oci-containers-ultrafeeder.service -p Environment | grep 'CUSTOM_ENV=present'")
-    machine.succeed("systemctl show oci-containers-ultrafeeder.service -p Environment | grep 'ULTRAFEEDER_CONFIG=base;extra;mlathub,piaware,30105,beast_in'")
+    machine.wait_for_unit("docker-ultrafeeder.service")
+    machine.wait_until_succeeds("docker inspect ultrafeeder --format '{{.State.Status}}' | grep running")
+    machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep 'CUSTOM_ENV=present'")
+    machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep 'ULTRAFEEDER_CONFIG=base;extra;mlathub,piaware,30105,beast_in'")
   '';
 }

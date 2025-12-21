@@ -14,6 +14,7 @@
     sops-nix,
     ...
   }: let
+    version = builtins.replaceStrings ["\n"] [""] (builtins.readFile ./VERSION);
     ultrafeederModule = import ./modules/nixos/ultrafeeder.nix;
     skystatsModule = import ./modules/nixos/skystats.nix;
     piawareModule = import ./modules/nixos/feeders/piaware.nix;
@@ -35,6 +36,7 @@
     };
   in
     {
+      inherit version;
       nixosModules = {
         ultrafeeder = ultrafeederModule;
         skystats = skystatsModule;
@@ -149,6 +151,8 @@
             nixosModules.planefinder
             nixosModules.airnavradar
             nixosModules.ultra (includes sops-nix + secret injection helpers)
+
+          Version: ${version}
 
           See README.md for usage.
         '';
