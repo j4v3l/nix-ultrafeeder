@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.services.skystats;
@@ -233,6 +234,18 @@ in {
       description = "Port mappings for the Skystats web UI.";
     };
 
+    networkName = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = let
+        net = config.ultra.defaults.network or {};
+        enabled = net.enable or false;
+      in
+        if enabled
+        then net.name or "ultra-net"
+        else null;
+      description = "Optional container network to join (defaults to ultra.defaults.network.name when set).";
+    };
+
     volumes = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
@@ -276,7 +289,9 @@ in {
             environment = dbEnv;
             environmentFiles = cfg.dbEnvironmentFiles;
             volumes = ["${cfg.database.dataDir}:/var/lib/postgresql/data"];
-            extraOptions = cfg.dbExtraOptions;
+            extraOptions =
+              (lib.optional (cfg.networkName != null) "--network=${cfg.networkName}")
+              ++ cfg.dbExtraOptions;
           }
           // lib.optionalAttrs (cfg.dbImageFile != null) {imageFile = cfg.dbImageFile;};
 
@@ -285,10 +300,48 @@ in {
             image = "${cfg.image}:${cfg.tag}";
             autoStart = true;
             dependsOn = ["skystats-db"];
-            inherit (cfg) ports environmentFiles volumes extraOptions;
+            inherit (cfg) ports environmentFiles volumes;
             environment = appEnv // cfg.environment;
+            extraOptions =
+              (lib.optional (cfg.networkName != null) "--network=${cfg.networkName}")
+              ++ cfg.extraOptions;
           }
           // lib.optionalAttrs (cfg.imageFile != null) {inherit (cfg) imageFile;};
+      };
+    };
+
+    systemd.services = lib.mkIf (cfg.networkName != null) {
+      "docker-skystats-db".serviceConfig = {
+        Path = [pkgs.coreutils pkgs.docker pkgs.podman];
+        ExecStartPre = [
+          (pkgs.writeShellScript "ensure-skystats-net" ''
+            set -euo pipefail
+            net="${cfg.networkName}"
+            [ -z "$net" ] && exit 0
+            tool=""
+            if command -v docker >/dev/null 2>&1; then tool=docker; elif command -v podman >/dev/null 2>&1; then tool=podman; fi
+            [ -z "$tool" ] && exit 0
+            if ! "$tool" network inspect "$net" >/dev/null 2>&1; then
+              "$tool" network create --driver "${config.ultra.defaults.network.driver or "bridge"}" "$net"
+            fi
+          '')
+        ];
+      };
+      "docker-skystats".serviceConfig = {
+        Path = [pkgs.coreutils pkgs.docker pkgs.podman];
+        ExecStartPre = [
+          (pkgs.writeShellScript "ensure-skystats-net" ''
+            set -euo pipefail
+            net="${cfg.networkName}"
+            [ -z "$net" ] && exit 0
+            tool=""
+            if command -v docker >/dev/null 2>&1; then tool=docker; elif command -v podman >/dev/null 2>&1; then tool=podman; fi
+            [ -z "$tool" ] && exit 0
+            if ! "$tool" network inspect "$net" >/dev/null 2>&1; then
+              "$tool" network create --driver "${config.ultra.defaults.network.driver or "bridge"}" "$net"
+            fi
+          '')
+        ];
       };
     };
 

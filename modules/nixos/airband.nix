@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.services.airband;
@@ -75,6 +76,18 @@ in {
       default = [];
       description = "Additional docker/podman CLI options (add extra --device entries, etc.).";
     };
+
+    networkName = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = let
+        net = config.ultra.defaults.network or {};
+        enabled = net.enable or false;
+      in
+        if enabled
+        then net.name or "ultra-net"
+        else null;
+      description = "Optional container network to join (defaults to ultra.defaults.network.name when set).";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -87,10 +100,30 @@ in {
           autoStart = true;
           inherit (cfg) environment environmentFiles volumes ports;
           extraOptions =
-            cfg.extraOptions
+            (lib.optional (cfg.networkName != null) "--network=${cfg.networkName}")
+            ++ cfg.extraOptions
             ++ lib.optionals (cfg.device != null) ["--device=${cfg.device}:${cfg.device}"];
         }
         // lib.optionalAttrs (cfg.imageFile != null) {inherit (cfg) imageFile;};
+    };
+
+    systemd.services.docker-airband = lib.mkIf (cfg.networkName != null) {
+      serviceConfig = {
+        Path = [pkgs.coreutils pkgs.docker pkgs.podman];
+        ExecStartPre = [
+          (pkgs.writeShellScript "ensure-airband-network" ''
+            set -euo pipefail
+            net="${cfg.networkName}"
+            [ -z "$net" ] && exit 0
+            tool=""
+            if command -v docker >/dev/null 2>&1; then tool=docker; elif command -v podman >/dev/null 2>&1; then tool=podman; fi
+            [ -z "$tool" ] && exit 0
+            if ! "$tool" network inspect "$net" >/dev/null 2>&1; then
+              "$tool" network create --driver "${config.ultra.defaults.network.driver or "bridge"}" "$net"
+            fi
+          '')
+        ];
+      };
     };
   };
 }

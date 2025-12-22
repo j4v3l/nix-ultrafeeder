@@ -1,11 +1,30 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }: let
   cfg = config.ultra.defaults;
 in {
   options.ultra.defaults = {
+    network = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether to create and use a shared bridge network for all ultrafeeder-related containers.";
+      };
+      name = lib.mkOption {
+        type = lib.types.str;
+        default = "ultra-net";
+        description = "Name of the shared container network that ultrafeeder, feeders, and companions should join.";
+      };
+      driver = lib.mkOption {
+        type = lib.types.str;
+        default = "bridge";
+        description = "Driver to use for the shared container network.";
+      };
+    };
+
     ultrafeeder = {
       backend = lib.mkOption {
         type = lib.types.enum ["docker" "podman"];
@@ -163,6 +182,34 @@ in {
   };
 
   config = {
+    # Ensure the shared network exists before containers start (docker/podman).
+    systemd.services."ultra-network-${cfg.network.name}" = lib.mkIf cfg.network.enable {
+      description = "Ensure OCI network ${cfg.network.name} exists";
+      wantedBy = ["docker-containers.target"];
+      before = ["docker-containers.target"];
+      after = ["docker.service" "podman.service"];
+      path = [pkgs.coreutils pkgs.docker pkgs.podman];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = pkgs.writeShellScript "ensure-ultra-network" ''
+          set -euo pipefail
+          if command -v docker >/dev/null 2>&1; then
+            tool=docker
+          elif command -v podman >/dev/null 2>&1; then
+            tool=podman
+          else
+            echo "Neither docker nor podman found on PATH" >&2
+            exit 1
+          fi
+
+          if ! "$tool" network inspect ${cfg.network.name} >/dev/null 2>&1; then
+            "$tool" network create --driver ${cfg.network.driver} ${cfg.network.name}
+          fi
+        '';
+      };
+    };
+
     services = {
       ultrafeeder = {
         backend = lib.mkDefault cfg.ultrafeeder.backend;

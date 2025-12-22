@@ -20,6 +20,7 @@ and [`tomcarman/skystats`](https://github.com/tomcarman/skystats) using `virtual
 - **`nixosModules.ultra`**: Convenience module that imports **`sops-nix`** + both services + secret integration
 - **`nixosModules.containerAutoUpdate`**: Optional timered auto-pull + restart helper for docker/podman images used here
 - **`nixosModules.defaults`**: Shared defaults you can override once under `ultra.defaults.*`
+- **Shared network**: All containers join the bridge network `ultra-net` by default; override with `ultra.defaults.network.*` or per-service `networkName`
 - **Typed options** for env vars, ports, volumes, backend choice, and basic host-dir creation
 
 ### Host prep (RTL-SDR)
