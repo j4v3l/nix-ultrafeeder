@@ -17,6 +17,16 @@ pkgs.testers.nixosTest {
         TZ = "UTC";
         READSB_DEVICE_TYPE = "rtlsdr";
       };
+      tar1090 = {
+        enable = true;
+        pageTitle = "Test Site";
+        siteLat = "51.5";
+        siteLon = "-0.1";
+        siteName = "London";
+        enableHeatmap = true;
+        enableActualRange = false;
+        disable = false;
+      };
       imageFile = pkgs.dockerTools.buildImage {
         name = "ultrafeeder-options-test";
         tag = "latest";
@@ -65,6 +75,15 @@ pkgs.testers.nixosTest {
     machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep READSB_PPM=12")
     machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep READSB_BIASTEE=true")
     machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep UAT_ENABLE=true")
+
+    # TAR1090 environment variables
+    machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep TAR1090_PAGETITLE=Test Site")
+    machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep TAR1090_SITELAT=51.5")
+    machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep TAR1090_SITELON=-0.1")
+    machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep TAR1090_SITENAME=London")
+    machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep TAR1090_ENABLE_HEATMAP=true")
+    machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep TAR1090_ENABLE_ACTUALRANGE=false")
+    machine.succeed("docker inspect ultrafeeder --format '{{json .Config.Env}}' | grep TAR1090_DISABLE=false")
 
     # Ports merged (host 19273 added)
     machine.succeed("docker inspect ultrafeeder --format '{{json .HostConfig.PortBindings}}' | grep 19273")

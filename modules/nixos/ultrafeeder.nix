@@ -44,6 +44,53 @@
     lib.unique (lib.filter (p: p != null && lib.hasPrefix "/" p) (map hostPart volumes));
 in {
   options.services.ultrafeeder = {
+    tar1090 = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Enable tar1090 web UI and related features.";
+      };
+      pageTitle = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "My Radar Site";
+        description = "TAR1090_PAGETITLE: Set the tar1090 web page title.";
+      };
+      siteLat = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "51.5074";
+        description = "TAR1090_SITELAT: Center marker latitude (overrides map center if set).";
+      };
+      siteLon = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "-0.1278";
+        description = "TAR1090_SITELON: Center marker longitude (overrides map center if set).";
+      };
+      siteName = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        example = "My Radar Site";
+        description = "TAR1090_SITENAME: Tooltip for the center marker.";
+      };
+      enableHeatmap = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "TAR1090_ENABLE_HEATMAP: Enable the HeatMap function.";
+      };
+      enableActualRange = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "TAR1090_ENABLE_ACTUALRANGE: Enable outline of actual range on the map.";
+      };
+      disable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "TAR1090_DISABLE: Set to true to disable the web server and all websites.";
+      };
+      # Add more TAR1090_* options as needed
+    };
     meta = {
       maintainers = ["j4v3l"];
       description = "Run SDR-Enthusiasts Ultrafeeder in a container (via oci-containers)";
@@ -325,6 +372,26 @@ in {
   };
 
   config = lib.mkIf cfg.enable (let
+    # Compose tar1090 environment variables from submodule
+    tar1090Env = lib.optionalAttrs cfg.tar1090.enable {
+      # Only set if not null, to avoid overriding container defaults
+      TAR1090_PAGETITLE = lib.mkIf (cfg.tar1090.pageTitle != null) cfg.tar1090.pageTitle;
+      TAR1090_SITELAT = lib.mkIf (cfg.tar1090.siteLat != null) cfg.tar1090.siteLat;
+      TAR1090_SITELON = lib.mkIf (cfg.tar1090.siteLon != null) cfg.tar1090.siteLon;
+      TAR1090_SITENAME = lib.mkIf (cfg.tar1090.siteName != null) cfg.tar1090.siteName;
+      TAR1090_ENABLE_HEATMAP =
+        if cfg.tar1090.enableHeatmap
+        then "true"
+        else "false";
+      TAR1090_ENABLE_ACTUALRANGE =
+        if cfg.tar1090.enableActualRange
+        then "true"
+        else "false";
+      TAR1090_DISABLE =
+        if cfg.tar1090.disable
+        then "true"
+        else null;
+    };
     # Merge ULTRAFEEDER_CONFIG fragments (if configured) into the container env
     # without discarding user-provided env vars.
     # Compose ULTRAFEEDER_CONFIG fragments, including gpsd if enabled
@@ -350,7 +417,8 @@ in {
     ultrafeederEnvMerged =
       cfg.environment
       // lib.optionalAttrs (final != null) {ULTRAFEEDER_CONFIG = final;}
-      // gpsdEnv;
+      // gpsdEnv
+      // tar1090Env;
 
     telemetryEnv =
       lib.optionalAttrs cfg.prometheus.enable {PROMETHEUS_ENABLE = "true";}
@@ -371,9 +439,15 @@ in {
       ++ lib.optional (cfg.telemetry.thermalZone != null) "${cfg.telemetry.thermalZone}:/sys/class/thermal/thermal_zone0:ro";
 
     portsMerged = cfg.ports ++ extraPorts;
+    # Ensure replay/heatmap/globe_history folders are always created if referenced
+    tar1090Folders = [
+      "/opt/adsb/ultrafeeder/globe_history"
+      "/opt/adsb/ultrafeeder/replay"
+      "/opt/adsb/ultrafeeder/heatmap"
+    ];
     volumesMerged = cfg.volumes ++ extraVolumes;
     hostTcpPorts = hostTcpPortsFrom portsMerged;
-    volumeHostDirs = volumeHostDirsFrom volumesMerged;
+    volumeHostDirs = lib.unique (volumeHostDirsFrom volumesMerged ++ tar1090Folders);
     volumeHostDirsUser = lib.filter (p: !(lib.hasPrefix "/proc/" p || lib.hasPrefix "/sys/" p)) volumeHostDirs;
     networkExtra = lib.optional (cfg.networkName != null) "--network=${cfg.networkName}";
     ensureNetworkScript = pkgs.writeShellScript "ensure-ultrafeeder-network" ''
