@@ -19,13 +19,10 @@ _: {
 
     environment = {
       TZ = "UTC";
-
       # Minimal-ish defaults; tune these per upstream docs.
       READSB_DEVICE_TYPE = "rtlsdr";
-
       # Example: identify the dongle by serial (or omit and let readsb pick the first).
       # READSB_DEVICE = "00000001";
-
       # If you don't want mapping/UI:
       # TAR1090_DISABLE = "true";
       # MLATHUB_DISABLE = "true";
@@ -46,6 +43,18 @@ _: {
     # ];
 
     # openFirewall = true;
+
+    # --- GPSD integration example ---
+    # Enable this to have Ultrafeeder dynamically update its location from gpsd on the host.
+    gpsd = {
+      enable = true;
+      host = "host.docker.internal"; # default for Docker
+      port = 2947; # default
+      minDistance = 20; # meters before location is considered changed
+      mlatWait = 90; # seconds to wait before restarting mlat after movement
+      checkInterval = 30; # seconds between gpsd location checks
+    };
+    # Make sure gpsd is running on the host and accessible at the above host/port.
   };
 
   services.skystats = {

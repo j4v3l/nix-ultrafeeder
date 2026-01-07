@@ -15,6 +15,14 @@ pkgs.testers.nixosTest {
         TZ = "UTC";
         READSB_DEVICE_TYPE = "rtlsdr";
       };
+      gpsd = {
+        enable = true;
+        host = "host.docker.internal";
+        port = 2947;
+        minDistance = 15;
+        mlatWait = 60;
+        checkInterval = 10;
+      };
       imageFile = pkgs.dockerTools.buildImage {
         name = "ultrafeeder-test";
         tag = "latest";
@@ -37,5 +45,10 @@ pkgs.testers.nixosTest {
     machine.start()
     machine.wait_for_unit("docker-ultrafeeder.service")
     machine.wait_until_succeeds("docker inspect ultrafeeder --format '{{.State.Status}}' | grep running")
+    # Check that gpsd config is present in the environment
+    machine.succeed("docker exec ultrafeeder printenv | grep 'ULTRAFEEDER_CONFIG=gpsd,host.docker.internal,2947'")
+    machine.succeed("docker exec ultrafeeder printenv | grep 'GPSD_MIN_DISTANCE=15'")
+    machine.succeed("docker exec ultrafeeder printenv | grep 'GPSD_MLAT_WAIT=60'")
+    machine.succeed("docker exec ultrafeeder printenv | grep 'GPSD_CHECK_INTERVAL=10'")
   '';
 }

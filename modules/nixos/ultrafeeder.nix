@@ -284,25 +284,73 @@ in {
       default = false;
       description = "Whether to open the firewall for simple TCP host ports in `services.ultrafeeder.ports`.";
     };
+    # GPSD integration
+    gpsd = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Enable gpsd integration for dynamic receiver location.";
+      };
+      host = lib.mkOption {
+        type = lib.types.str;
+        default = "host.docker.internal";
+        example = "host.docker.internal";
+        description = "Host/IP where gpsd is running (default: host.docker.internal for Docker).";
+      };
+      port = lib.mkOption {
+        type = lib.types.int;
+        default = 2947;
+        example = 2947;
+        description = "Port where gpsd is listening (default: 2947).";
+      };
+      minDistance = lib.mkOption {
+        type = lib.types.int;
+        default = 20;
+        example = 20;
+        description = "GPSD_MIN_DISTANCE: Distance in meters before location is considered changed.";
+      };
+      mlatWait = lib.mkOption {
+        type = lib.types.int;
+        default = 90;
+        example = 90;
+        description = "GPSD_MLAT_WAIT: Wait period in seconds before mlat restarts after movement.";
+      };
+      checkInterval = lib.mkOption {
+        type = lib.types.int;
+        default = 30;
+        example = 30;
+        description = "GPSD_CHECK_INTERVAL: How often to check for updated location (seconds).";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable (let
     # Merge ULTRAFEEDER_CONFIG fragments (if configured) into the container env
     # without discarding user-provided env vars.
-    ultrafeederEnvMerged = let
-      base = cfg.environment.ULTRAFEEDER_CONFIG or null;
-      mlathubFrags = map (i: "mlathub,${i.host},${toString i.port},${i.protocol}") cfg.mlatHubInputs;
-      frags = cfg.ultrafeederConfigFragments ++ mlathubFrags;
-      fragsStr = lib.concatStringsSep ";" frags;
-      final =
-        if frags == []
-        then base
-        else if base == null
-        then fragsStr
-        else "${base};${fragsStr}";
-    in
+    # Compose ULTRAFEEDER_CONFIG fragments, including gpsd if enabled
+    gpsdFrag =
+      if cfg.gpsd.enable
+      then ["gpsd,${cfg.gpsd.host},${toString cfg.gpsd.port}"]
+      else [];
+    mlathubFrags = map (i: "mlathub,${i.host},${toString i.port},${i.protocol}") cfg.mlatHubInputs;
+    allFrags = cfg.ultrafeederConfigFragments ++ mlathubFrags ++ gpsdFrag;
+    base = cfg.environment.ULTRAFEEDER_CONFIG or null;
+    fragsStr = lib.concatStringsSep ";" allFrags;
+    final =
+      if allFrags == []
+      then base
+      else if base == null
+      then fragsStr
+      else "${base};${fragsStr}";
+    gpsdEnv = lib.optionalAttrs cfg.gpsd.enable {
+      GPSD_MIN_DISTANCE = toString cfg.gpsd.minDistance;
+      GPSD_MLAT_WAIT = toString cfg.gpsd.mlatWait;
+      GPSD_CHECK_INTERVAL = toString cfg.gpsd.checkInterval;
+    };
+    ultrafeederEnvMerged =
       cfg.environment
-      // lib.optionalAttrs (final != null) {ULTRAFEEDER_CONFIG = final;};
+      // lib.optionalAttrs (final != null) {ULTRAFEEDER_CONFIG = final;}
+      // gpsdEnv;
 
     telemetryEnv =
       lib.optionalAttrs cfg.prometheus.enable {PROMETHEUS_ENABLE = "true";}

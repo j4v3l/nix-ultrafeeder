@@ -158,6 +158,36 @@ This flake provides a helper for the second case:
 Ultrafeeder documentation about MLAT hub ingest and external MLAT return data is in
 [`sdr-enthusiasts/docker-adsb-ultrafeeder`](https://github.com/sdr-enthusiasts/docker-adsb-ultrafeeder).
 
+
+### GPSD Integration (dynamic receiver location)
+
+Ultrafeeder can use GPSD to update its receiver location dynamically (useful for mobile setups or precise location updates).
+
+**Host requirements:**
+- You must have `gpsd` running on the host, listening on TCP port 2947 (default).
+- For Docker, the container will connect to `host.docker.internal:2947` by default.
+- See upstream [docker-adsb-ultrafeeder GPSD docs](https://github.com/sdr-enthusiasts/docker-adsb-ultrafeeder?tab=readme-ov-file#updating-your-location-with-gpsd) for host setup.
+
+**Example NixOS config:**
+
+```nix
+services.ultrafeeder = {
+  enable = true;
+  gpsd = {
+    enable = true;
+    host = "host.docker.internal"; # default, can be changed
+    port = 2947; # default
+    minDistance = 20; # meters before location is considered changed
+    mlatWait = 90;    # seconds to wait before restarting mlat after movement
+    checkInterval = 30; # seconds between gpsd location checks
+  };
+};
+```
+
+This will automatically add the correct `ULTRAFEEDER_CONFIG` and environment variables for GPSD support.
+
+---
+
 ### Options
 
 Module namespace: **`services.ultrafeeder`**
