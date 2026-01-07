@@ -1,5 +1,10 @@
 {
   "recommendations": [
+    "jnoortheen.nix-ide",
+    "arrterian.nix-env-selector",
+    "mkhl.direnv",
+    "bbenoist.Nix",
+    "astro-build.astro-vscode",
     "GitHub.vscode-pull-request-github",
     "ms-python.python",
     "ms-azuretools.vscode-docker",

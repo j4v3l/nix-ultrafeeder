@@ -19,5 +19,3 @@ labels: bug
 ## Logs / config
 
 Please redact secrets.
-
-

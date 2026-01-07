@@ -1,0 +1,16 @@
+{
+  "nix.enableLanguageServer": true,
+  "nix.serverPath": "nixd",
+  "nix.serverSettings": {
+    "nixd": {
+      "formatting": {
+        "command": "alejandra"
+      }
+    }
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "jnoortheen.nix-ide",
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true
+}

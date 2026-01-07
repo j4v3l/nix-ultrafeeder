@@ -2,6 +2,27 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Format Nix files",
+      "type": "shell",
+      "command": "alejandra .",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Lint Nix files",
+      "type": "shell",
+      "command": "statix check . && deadnix --fail .",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Run Nix flake checks",
+      "type": "shell",
+      "command": "nix flake check",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
       "label": "Run pre-commit hooks",
       "type": "shell",
       "command": "pre-commit run --all-files",

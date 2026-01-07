@@ -15,5 +15,3 @@ Please include:
 ### Supported versions
 
 Only the latest `main` branch is supported.
-
-
